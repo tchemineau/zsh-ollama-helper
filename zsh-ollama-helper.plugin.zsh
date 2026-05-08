@@ -11,13 +11,13 @@ _ai_check_service() {
 }
 
 # Ask a general question to the local model
-ai_ask() {
+ai-ask() {
   _ai_check_service || return 1
   ollama run llama3:8b "Respond concisely: $@"
 }
 
 # Get a specific terminal command for a task
-ai_how() {
+ai-how() {
   _ai_check_service || return 1
   
   local prompt="Provide ONLY the macOS terminal command for: $@. "
@@ -28,7 +28,7 @@ ai_how() {
 }
 
 # Fix the last failed command in history
-ai_fix() {
+ai-fix() {
   _ai_check_service || return 1
   local last_cmd=$(fc -ln -1)
   echo "Analyzing: $last_cmd"
@@ -36,7 +36,7 @@ ai_fix() {
 }
 
 # Context-aware help based on current directory listing
-ai_look() {
+ai-look() {
   _ai_check_service || return 1
   local files=$(ls -F | head -n 20)
   ai_ask "Based on these files: [$files], help me with: $@"
