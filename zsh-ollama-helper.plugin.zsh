@@ -2,7 +2,6 @@
 # Ollama Helper Plugin for ZSH - AI Naming Convention
 # ----------------------------------------------------------------------------
 
-# Check if Ollama is running before calling the API
 _ai_check_service() {
   if ! pgrep -x "Ollama" > /dev/null; then
     echo "⚠️ Ollama is not running. Please launch the application first."
@@ -10,35 +9,59 @@ _ai_check_service() {
   fi
 }
 
-# Ask a general question to the local model
 ai-ask() {
   _ai_check_service || return 1
   ollama run llama3:8b "Respond concisely: $@"
 }
 
-# Get a specific terminal command for a task
 ai-how() {
   _ai_check_service || return 1
-  
-  local prompt="Provide ONLY the macOS terminal command for: $@. "
-  prompt+="No explanation, no intro/outro, no markdown, just the raw command."
-
-  local cmd=$(ollama run llama3:8b "$prompt")
+  local p="Provide ONLY the macOS terminal command for: $@. "
+  p+="No explanation, no intro/outro, no markdown, just the raw command."
+  local cmd=$(ollama run llama3:8b "$p")
   echo -e "\033[0;32m$cmd\033[0m"
+  echo "$cmd" # Return command for other functions
 }
 
-# Fix the last failed command in history
+ai-run() {
+  _ai_check_service || return 1
+  local force=false
+  local query="$@"
+
+  # Check for -y flag
+  if [[ "$1" == "-y" ]]; then
+    force=true
+    shift
+    query="$@"
+  fi
+
+  # Get the command using our ai-how logic
+  # We capture only the last line to avoid potential ollama noise
+  local cmd=$(ai-how "$query" | tail -n 1)
+
+  if [[ "$force" == true ]]; then
+    eval "$cmd"
+  else
+    echo -n "🚀 Execute this command? (y/N): "
+    read -r answer
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+      eval "$cmd"
+    else
+      echo "Aborted."
+    fi
+  fi
+}
+
 ai-fix() {
   _ai_check_service || return 1
   local last_cmd=$(fc -ln -1)
-  echo "Analyzing: $last_cmd"
-  ai_how "fix this failed terminal command: $last_cmd"
+  echo "Analyzing failure: $last_cmd"
+  ai-how "fix this failed terminal command: $last_cmd"
 }
 
-# Context-aware help based on current directory listing
 ai-look() {
   _ai_check_service || return 1
   local files=$(ls -F | head -n 20)
-  ai_ask "Based on these files: [$files], help me with: $@"
+  ai-ask "Based on these files: [$files], help me with: $@"
 }
 
