@@ -42,6 +42,7 @@ ai-run() {
   if [[ "$force" == true ]]; then
     eval "$cmd"
   else
+    echo -e "$cmd\n"
     echo -n "🚀 Execute this command? (y/N): "
     read -r answer
     if [[ "$answer" =~ ^[Yy]$ ]]; then
